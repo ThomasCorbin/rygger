@@ -1,0 +1,15 @@
+#!/usr/bin/env ruby
+
+# require 'colorize'
+# if Config::CONFIG['host_os'] =~ /mswin|mingw/
+#   require 'win32/console/ansi'
+# end
+
+
+begin
+  require_relative '../lib/rygger'
+rescue LoadError
+  require 'rubygems'
+  require_relative '../lib/rygger'
+end
+Rygger::Rfind.new.slop_main

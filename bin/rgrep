@@ -1,0 +1,15 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'rake'
+require 'rbconfig'
+
+# $LOAD_PATH.unshift File.expand_path('../../lib', file)
+
+begin
+  require_relative '../lib/rygger'
+rescue LoadError
+  require 'rubygems'
+  require_relative '../lib/rygger'
+end
+Rygger::Rgrep.new.slop_main
