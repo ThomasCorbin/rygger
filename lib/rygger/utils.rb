@@ -3,6 +3,34 @@ module Rygger
 
     Opt = Struct.new( :key, :value )
 
+    #
+    #   Utilitly to load stuff into irb and
+    #   have nice messages on failure (w/o screwing up irb)
+    #   and to do initialization (if desired) on success
+    #
+    def try_require(what, condition = true, &block)
+      loaded, require_result = false, nil
+
+      if ! condition
+        puts "Not installing #{what}"
+        return require_result
+      end
+
+      begin
+        require_result = require what
+        loaded = true
+
+      rescue Exception => ex
+        puts "** Unable to require '#{what}'"
+        puts "--> #{ex.class}: #{ex.message}"
+      end
+
+      yield if loaded and block_given?
+
+      require_result
+    end
+
+
     def log_options( opts )
       return unless opts.verbose?
 
@@ -29,7 +57,11 @@ module Rygger
 
     def is_windows?
       # (Config::CONFIG['host_os'] =~ /mswin|mingw/) ? true : false
-      (Config::CONFIG['host_os'] =~ /windows|cygwin|bccwin|cygwin|djgpp|mingw|mswin|wince/i) ? true : false
+      result = (RbConfig::CONFIG['host_os'] =~ /windows|cygwin|bccwin|cygwin|djgpp|mingw|mswin|wince/i) ? true : false
+
+      # puts "is_windows? #{result}"
+
+      result
     end
 
 

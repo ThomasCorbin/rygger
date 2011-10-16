@@ -5,6 +5,7 @@
 #   require 'win32/console/ansi'
 # end
 
+# $LOAD_PATH.unshift File.expand_path('../../lib', file )
 
 begin
   require_relative '../lib/rygger'

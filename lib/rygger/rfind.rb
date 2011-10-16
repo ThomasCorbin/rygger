@@ -42,7 +42,9 @@ module Rygger
       Find.find(base) do |path|
         if FileTest.directory? path
           if excludes.include?( File.basename( path ) )
-            Find.prune       # Don't look any further into this directory.
+            puts "#{path} in excludes" if @verbose
+            # Don't look any further into this directory.
+            Find.prune
           else
             next
           end
@@ -69,7 +71,6 @@ module Rygger
       if utils.is_windows?
         puts "#{output.colorize :cyan}"
       elsif
-        require 'lolize/auto'
         puts output
       end
         # p path
@@ -79,6 +80,7 @@ module Rygger
 
     def slop_main
       require 'slop'
+      utils.try_require 'lolize/auto', ! (utils.is_windows? && utils.is_java?)
 
       opts = Slop.new do
         my_name = File.basename($0)
@@ -133,7 +135,8 @@ module Rygger
 
       default_excludes    = [ "CVS",
                               ".svn",
-                              # "classes",
+                              "classes",
+                              ".git",
                               # "images",
                               # "lib",
                               # "tlds",

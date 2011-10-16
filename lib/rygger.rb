@@ -1,4 +1,4 @@
-require "rygger/version"
+require_relative "rygger/version"
 require_relative 'rygger/color_assigner'
 require_relative 'rygger/rfind'
 require_relative 'rygger/rgrep'

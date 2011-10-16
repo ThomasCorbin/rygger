@@ -189,6 +189,7 @@ module Rygger
 
     def slop_main
       require 'slop'
+      utils.try_require 'lolize/auto', ! (utils.is_windows? && utils.is_java?)
 
       opts = Slop.new do
         my_name = File.basename($0)
