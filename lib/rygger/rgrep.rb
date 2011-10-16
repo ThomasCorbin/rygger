@@ -1,4 +1,4 @@
-
+require 'iconv'
 
 module Rygger
   class Rgrep
@@ -58,6 +58,7 @@ module Rygger
 
     def colorize_line( line, pat )
       return line if utils.is_jruby?
+      return line if ! @show_colors
 
       require 'colorize'
 
@@ -100,14 +101,17 @@ module Rygger
           next
         end
 
-        next if utils.binary? file_name
+        next if utils.long_binary? file_name
 
         # next unless `file #{file_name}` =~ /text/
 
         line_number = 0
-        File.foreach(file_name) do |line|
+        iconv = Iconv.new('UTF-8//IGNORE', 'UTF-8')
+        File.foreach(file_name, :encoding => "UTF-8" ) do |line|
           line_number += 1
 
+          line  = iconv.iconv(line + ' ')[0..-2]
+          # puts "line = #{file_name}/#{line}"
           if eval regexp
             # results << sprintf("%5d : %s", line_number, line)
 
@@ -189,7 +193,6 @@ module Rygger
 
     def slop_main
       require 'slop'
-      utils.try_require 'lolize/auto', ! utils.is_windows?
 
       opts = Slop.new do
         my_name = File.basename($0)
@@ -235,6 +238,7 @@ module Rygger
                          AND them'
 
         on :i, :ignore_case, 'ignore case when matching'
+        on :c, :colors,    'show colors, defaults to true'
 
         on :s, :no_file_names, "don't show file names"
 
@@ -264,6 +268,7 @@ module Rygger
       @verbose              = opts.verbose?
       @file_names_only      = opts[:filenamesonly]
       @show_file_names      = opts[:no_file_names] ? false : true
+      @show_colors          = opts[:colors].nil? ? true : false
 
       base = base.gsub( /\\/, '/' )
       include_pattern += extra_matches
@@ -280,8 +285,13 @@ module Rygger
         ignore_case           = #{ignore_case}
         file_names_only       = #{@file_names_only}
         show_file_names       = #{@show_file_names}
+        show_colors           = #{@show_colors}
 
         EOS
+      end
+
+      if @show_colors
+        utils.try_require 'lolize/auto', ! utils.is_windows?
       end
 
       check_pattern_specified include_pattern

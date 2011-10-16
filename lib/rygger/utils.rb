@@ -3,6 +3,9 @@ module Rygger
 
     Opt = Struct.new( :key, :value )
 
+    BINARY_TYPES = %w(.pdf )
+
+
     #
     #   Utilitly to load stuff into irb and
     #   have nice messages on failure (w/o screwing up irb)
@@ -66,10 +69,13 @@ module Rygger
 
 
     def binary?( name )
-      if ! is_windows?
-        require 'ptools'
-        return File.binary? name
-      end
+      # if ! is_windows?
+      #   require 'ptools'
+      #   return File.binary? name
+      # end
+      # puts BINARY_TYPES
+      # puts BINARY_TYPES.include?( File.extname name )
+      # return if BINARY_TYPES.include?( File.extname name )
 
       open name do |f|
         while (b = f.read(256)) do
@@ -82,9 +88,13 @@ module Rygger
 
 
     def long_binary?( name )
-      if ! is_windows?
-        return File.binary? name
-      end
+      # if ! is_windows?
+      #   return File.binary? name
+      # end
+
+      # puts BINARY_TYPES
+      # puts BINARY_TYPES.include?( File.extname name )
+      # return if BINARY_TYPES.include?( File.extname name )
 
       open name do |f|
         f.each_byte { |x|
