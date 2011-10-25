@@ -1,0 +1,88 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'file-tail'
+
+class Tail
+
+  def tail( file_name, num_lines = 10 )
+
+    if @verbose
+      puts "Tail of file #{file_name} #{File.size file_name}"
+      puts "=" * 40
+      puts
+    end
+
+    File.open(file_name) do |log|
+      log.extend(File::Tail)
+
+      log.interval       = 10
+      log.return_if_eof  = true
+
+      log.backward(num_lines)
+      log.tail{ |line| puts line }
+    end
+  end
+
+
+  def process_command_line
+    require 'slop'
+
+    default_num_lines = 10
+
+    opts = Slop.new do
+      my_name = File.basename($0)
+
+      banner <<-EOS.gsub(/^ {4}/, "")
+
+      #{my_name} is a utility for tailing a file, getting at the bottom of the file
+
+      Usage:
+
+        #{my_name} OPTIONS file1 [file2] [file3]
+
+      where OPTIONS can be
+      EOS
+
+      on :V, :version, 'print out version number' do
+        puts 'Version 0.1.0'
+        exit
+      end
+
+      on     :verbose, 'verbose mode'
+
+      on :n, :lines, "<number of lines>, number of lines from the bottom to display. Defaults to #{default_num_lines}", :optional => false, :as => :integer
+
+      on :h, :help, 'Print this help message', :tail => true do
+        puts help
+        exit
+      end
+    end
+
+    #   Add matches from the end of the line, that aren't specified via '-i'
+    file_list = []
+    opts.parse do |arg|
+      file_list << arg
+    end
+
+    # input_num_lines = opts[:lines] ? opts[:lines].to_i : nil
+    # num_lines = input_num_lines || default_num_lines
+    num_lines = opts[:lines] || default_num_lines
+    @verbose  = opts.verbose?
+
+    if file_list.empty?
+      puts "You must specify a file"
+      puts opts.help
+      exit
+    end
+
+    file_list.each{ |f| tail( f, num_lines )}
+  end
+end
+
+begin
+  Tail.new.process_command_line
+rescue Interrupt
+  puts "** Interrupted **"
+  exit 1
+end

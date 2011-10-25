@@ -14,4 +14,9 @@ rescue LoadError
   require 'rubygems'
   require_relative '../lib/rygger'
 end
-Rygger::Rfind.new.slop_main
+
+begin
+  Rygger::Rfind.new.slop_main
+rescue
+  puts "** Interrupted **"
+end

@@ -1,0 +1,21 @@
+#!/usr/bin/env ruby
+
+require 'rexml/document'
+
+def print_xml( xml )
+  doc = REXML::Document.new xml
+  # doc.write $stdout, 4
+
+  formatter = REXML::Formatters::Pretty.new( 4 )
+  formatter.compact = true
+  puts formatter.write( doc.root, "" )
+
+  puts "\n\n"
+end
+
+
+path = 'rbps-core-r1\src\test\resources\gov\va\vba\rbps\lettergeneration\1423.response'
+
+xml = File.read( path )
+
+print_xml xml

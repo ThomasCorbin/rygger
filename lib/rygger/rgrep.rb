@@ -110,6 +110,7 @@ module Rygger
         File.foreach(file_name, :encoding => "UTF-8" ) do |line|
           line_number += 1
 
+          # http://po-ru.com/diary/fixing-invalid-utf-8-in-ruby-revisited/
           line  = iconv.iconv(line + ' ')[0..-2]
           # puts "line = #{file_name}/#{line}"
           if eval regexp
