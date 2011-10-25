@@ -2,7 +2,9 @@
 
 Rygger is just a gem that provides some unix-esque commands that I can use
 on windows.   I'm in a position at work where I can't install cygwin on my
-machine.
+machine, but I could install ruby.  Go figure, but it let me practice some
+ruby and write some of these utilities that I'm used to having around.
+And they've been a lifesaver.
 
 Rygger is in a fairly preliminary state, but I've found it immensely useful
 as it is.   I can't say that anyone else would find it useful, but you're
