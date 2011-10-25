@@ -55,6 +55,10 @@ Shortcomings
 1.  Some of the commands are extremely preliminary, so they don't
     have command line processing or share common code.
 
+1.  I'm probably the only person who likes lolize so much.  If not for
+    lolize, I like the colorize bit that shows the matched expressions
+    in colors.
+
 
 I got the code I used to start rgrep off the internet, will have to find out
 where.  But all bugs and awkward interfaces are mine, not the original author's.
