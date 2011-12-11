@@ -90,7 +90,8 @@ module Rygger
         # next unless `file #{file_name}` =~ /text/
 
         line_number = 0
-        iconv = Iconv.new('UTF-8//IGNORE', 'UTF-8')
+        iconv       = Iconv.new('UTF-8//IGNORE', 'UTF-8')
+
         File.foreach(file_name, :encoding => "UTF-8" ) do |line|
           line_number += 1
 
