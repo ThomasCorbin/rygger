@@ -10,60 +10,19 @@ module Rygger
   #
   class Rfind
 
-    def color_assigner
-      @color_assigner ||= ColorAssigner.new
-    end
-
-
     def utils
       @utils ||= Utils.new
     end
 
 
-    def check_for_excludes( path, excludes )
-      excludes.each do |exclude|
-        return true if path =~ /#{exclude}/
-      end
-
-      false
-    end
-
-
-    def check_for_any_match( path, includes, excludes )
-
-      includes.each do |include|
-        if @ignore_case
-          match = path =~ /#{include}/i
-        else
-          match = path =~ /#{include}/
-        end
-
-        if match
-          output path, include
-        end
-      end
-    end
-
-
-    def check_for_match( path, regexp, includes, excludes )
-      return if check_for_excludes( path, excludes )
-
-      # check_for_any_match( path, includes, excludes ) if logical_or
-      # check_for_any_match( path, includes, excludes )
-
-      if eval regexp
-        includes.each do |pat|
-          path = color_assigner.colorize_line path, pat
-        end
-
-        output path
-      end
+    def search
+      @search ||= Search.new @ignore_case, @show_colors
     end
 
 
     def find( base, includes, excludes, logical_or )
 
-      regexp                = Search.new.prepare_regexp( "path", includes, excludes, logical_or, @ignore_case)
+      search.prepare_regexp( "path", includes, excludes, logical_or)
       # puts regexp
 
       Find.find(base) do |path|
@@ -78,7 +37,9 @@ module Rygger
         elsif path =~ /\.metadata/
           Find.prune       # Don't look any further into this directory.
         else
-          check_for_match path, regexp, includes, excludes
+          search.check_for_match(path) do |path|
+            output path
+          end
         end
       end
     end
@@ -202,25 +163,9 @@ module Rygger
         EOS
       end
 
-      color_assigner.show_colors = @show_colors
-
-      check_pattern_specified include_pattern
+      search.check_pattern_specified include_pattern
 
       find( base_dir, include_pattern, exclude_pattern, logical_or )
-    end
-
-
-    def check_pattern_specified( include_pattern )
-
-      # if include_pattern.length == 0 and exclude_pattern.length == 0
-      if include_pattern.length == 0
-        puts <<-EOS.gsub(/^\s+/, "").strip
-        --- Hmm ... looks like you don\'t want to search for any pattern.  Quitting!
-        --- Try -h if you are looking for some help.
-
-        EOS
-        exit
-      end
     end
   end
 

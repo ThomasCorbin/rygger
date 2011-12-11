@@ -17,6 +17,11 @@ module Rygger
     end
 
 
+    def search
+      @search ||= Search.new @ignore_case, @show_colors
+    end
+
+
     def build_glob_pattern( base, file_pattern, recurse )
       if recurse
         glob_pattern = "#{base}/**/#{file_pattern}"
@@ -54,8 +59,8 @@ module Rygger
     end
 
 
-    def generalized_search( include_pattern,
-                            exclude_pattern,
+    def generalized_search( includes,
+                            excludes,
                             base                    = '.',
                             file_pattern            = '*',
                             exclude_file_pattern    = nil,
@@ -63,8 +68,8 @@ module Rygger
                             logical_or              = false,
                             ignore_case             = false )
 
+      search.prepare_regexp("line", includes, excludes, logical_or)
       file_names            = get_filenames( base, file_pattern, exclude_file_pattern, recurse )
-      regexp                = Search.new.prepare_regexp(include_pattern, exclude_pattern, logical_or, ignore_case)
       results               = []
       num_matching_lines    = 0
       num_matching_files    = 0
@@ -91,14 +96,8 @@ module Rygger
 
           # http://po-ru.com/diary/fixing-invalid-utf-8-in-ruby-revisited/
           line  = iconv.iconv(line + ' ')[0..-2]
-          # puts "line = #{file_name}/#{line}"
-          if eval regexp
-            # results << sprintf("%5d : %s", line_number, line)
 
-            include_pattern.each do |pat|
-              line = color_assigner.colorize_line line, pat
-            end
-
+          search.check_for_match(line) do |path|
             if @show_file_names
               results << sprintf("%5d : %s", line_number, line)
             else
@@ -246,7 +245,7 @@ module Rygger
       #   utils.try_require 'lolize/auto', ! utils.is_windows?
       # end
 
-      check_pattern_specified include_pattern
+      search.check_pattern_specified include_pattern
 
       res = generalized_search( include_pattern,
                                 exclude_pattern,
@@ -264,20 +263,6 @@ module Rygger
     def instance_variable_name_for(x)
       self.instance_variables.find do |var|
         x == self.instance_variable_get(var)
-      end
-    end
-
-
-    def check_pattern_specified( include_pattern )
-
-      # if include_pattern.length == 0 and exclude_pattern.length == 0
-      if include_pattern.length == 0
-        puts <<-EOS.gsub(/^\s+/, "").strip
-        --- Hmm ... looks like you don\'t want to search for any pattern.  Quitting!
-        --- Try -h if you are looking for some help.
-
-        EOS
-        exit
       end
     end
   end

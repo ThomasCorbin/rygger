@@ -8,7 +8,8 @@ module Rygger
 
     attr_accessor :show_colors
 
-    def initialize
+    def initialize( show_colors = true )
+      @show_colors        = show_colors
       @colors             = [ :cyan, :green, :red, :blue, :magenta ]
       @pattern_color_hash = Hash.new{|hash,key| hash[key] = next_color( @colors ) }
     end
