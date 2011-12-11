@@ -7,11 +7,6 @@ module Rygger
     VC_DIRS = %w(blib CVS _darcs .git .pc RCS SCCS .svn pkg)
 
 
-    def color_assigner
-      @color_assigner ||= ColorAssigner.new
-    end
-
-
     def utils
       @utils ||= Utils.new
     end
@@ -68,7 +63,7 @@ module Rygger
                             logical_or              = false,
                             ignore_case             = false )
 
-      search.prepare_regexp("line", includes, excludes, logical_or)
+      search.prepare_regexp(includes, excludes, logical_or)
       file_names            = get_filenames( base, file_pattern, exclude_file_pattern, recurse )
       results               = []
       num_matching_lines    = 0
@@ -100,9 +95,9 @@ module Rygger
 
           search.check_for_match(line) do |path|
             if @show_file_names
-              results << sprintf("%5d : %s", line_number, line)
+              results << sprintf("%5d : %s", line_number, path)
             else
-              results << line
+              results << path
             end
           end
         end
@@ -239,8 +234,6 @@ module Rygger
 
         EOS
       end
-
-      color_assigner.show_colors = @show_colors
 
       # if @show_colors
       #   utils.try_require 'lolize/auto', ! utils.is_windows?

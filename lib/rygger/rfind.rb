@@ -22,7 +22,7 @@ module Rygger
 
     def find( base, includes, excludes, logical_or )
 
-      search.prepare_regexp( "path", includes, excludes, logical_or)
+      search.prepare_regexp( includes, excludes, logical_or)
       # puts regexp
 
       Find.find(base) do |path|

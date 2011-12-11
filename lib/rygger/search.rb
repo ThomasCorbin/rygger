@@ -1,5 +1,8 @@
 module Rygger
 
+
+  #    Utilities for finding things, files by regular expression,
+  #    Or file contents by regular expression
   class Search
 
 
@@ -44,7 +47,6 @@ module Rygger
 
       # check_for_any_match( path, includes, excludes ) if logical_or
       # check_for_any_match( path, includes, excludes )
-
       if eval @regexp
         @includes.each do |pat|
           path = color_assigner.colorize_line path, pat
@@ -56,9 +58,10 @@ module Rygger
     end
 
 
-    def prepare_regexp(input, include_pattern, exclude_pattern, logical_or)
+    def prepare_regexp(include_pattern, exclude_pattern, logical_or)
       @includes = include_pattern
       @excludes = exclude_pattern
+      input     = 'path'
 
       regexp = []
 
