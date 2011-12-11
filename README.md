@@ -10,6 +10,8 @@ Rygger is in a fairly preliminary state, but I've found it immensely useful
 as it is.   I can't say that anyone else would find it useful, but you're
 welcome to do what you want with it.
 
+A better choice would probably be ack and Daniel Lucraft's rak.
+
 The commands I have
 ------------
 
@@ -41,12 +43,12 @@ Shortcomings
 
 1.  I'd like the command line flags to be consistent between the commands.
 
-1.  I'd like rtee to have the _-a_ flag.
+1.  I'd like _rtee_ to have the _-a_ flag.
 
 1.  Slop doesn't seem to allow abbreviations for long flags.  For example,
     I can't use "--ve" instead of "--verbose".
 
-1.  The code in rgrep needs cleaning up and refactoring.
+1.  The code in _rgrep_ needs cleaning up and refactoring.
 
 1.  There are no tests.
 
@@ -67,6 +69,12 @@ I found an rtail gem, but I'm also looking at James Edward Grey's elif library.
 It's no longer maintained, as far as I can tell, but I'd like to compare the
 two and see what I can learn.   He's working on an rcat, which I find very
 interesting.
+
+Installing locally
+------------------
+
+rake -T
+rake install
 
 
 License

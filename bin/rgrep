@@ -16,6 +16,6 @@ end
 
 begin
   Rygger::Rgrep.new.slop_main
-rescue Interrupt
+rescue Interrupt => ex
   puts "** Interrupted **"
 end

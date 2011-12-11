@@ -1,11 +1,19 @@
 require 'find'
 # require 'Time'
-require 'rubygems'
-require 'colorize'
+
 
 module Rygger
 
+
+  #
+  #    Find files whose name matches a given regular expression
+  #
   class Rfind
+
+    def color_assigner
+      @color_assigner ||= ColorAssigner.new
+    end
+
 
     def utils
       @utils ||= Utils.new
@@ -22,29 +30,46 @@ module Rygger
 
 
     def check_for_any_match( path, includes, excludes )
+
       includes.each do |include|
-        if path =~ /#{include}/
-          output path
+        if @ignore_case
+          match = path =~ /#{include}/i
+        else
+          match = path =~ /#{include}/
+        end
+
+        if match
+          output path, include
         end
       end
     end
 
 
-    def check_for_match( path, includes, excludes, logical_or )
+    def check_for_match( path, regexp, includes, excludes )
       return if check_for_excludes( path, excludes )
 
       # check_for_any_match( path, includes, excludes ) if logical_or
-      check_for_any_match( path, includes, excludes )
+      # check_for_any_match( path, includes, excludes )
+
+      if eval regexp
+        includes.each do |pat|
+          path = color_assigner.colorize_line path, pat
+        end
+
+        output path
+      end
     end
 
 
     def find( base, includes, excludes, logical_or )
+
+      regexp                = prepare_regexp( "path", includes, excludes, logical_or, @ignore_case)
+      # puts regexp
+
       Find.find(base) do |path|
         if FileTest.directory? path
           if excludes.include?( File.basename( path ) )
-            puts "#{path} in excludes" if @verbose
-            # Don't look any further into this directory.
-            Find.prune
+            Find.prune       # Don't look any further into this directory.
           else
             next
           end
@@ -53,10 +78,39 @@ module Rygger
         elsif path =~ /\.metadata/
           Find.prune       # Don't look any further into this directory.
         else
-          check_for_match path, includes, excludes, logical_or
+          check_for_match path, regexp, includes, excludes
         end
       end
     end
+
+
+    def prepare_regexp(input, include_pattern, exclude_pattern, logical_or, ignore_case)
+      regexp = []
+
+      ignore = ""
+      ignore = "i" if ignore_case
+
+      if include_pattern && include_pattern.length > 0
+        include_pattern.each { |pat| regexp << "#{input} =~ /#{pat}/#{ignore}" }
+      end
+
+      ipattern = logical_or ? "(#{regexp.join(' or ')})" : "(#{regexp.join(' and ')})"
+
+      regexp = []
+
+      if exclude_pattern && exclude_pattern.length > 0
+        exclude_pattern.each { |pat| regexp << "#{input} !~ /#{pat}/#{ignore}" }
+      end
+
+      xpattern = "(#{regexp.join(' and ')})"
+
+      regexp = []
+      regexp << ipattern if ipattern != '()'
+      regexp << xpattern if xpattern != '()'
+
+      "(#{regexp.join(' and ')})"
+    end
+
 
 
     def output( path )
@@ -80,7 +134,7 @@ module Rygger
 
     def slop_main
       require 'slop'
-      utils.try_require 'lolize/auto', ! utils.is_windows?
+      #utils.try_require 'lolize/auto', ! utils.is_windows?
 
       opts = Slop.new do
         my_name = File.basename($0)
@@ -98,12 +152,12 @@ module Rygger
         EOS
 
         on :V, :version, 'print out version number' do
-          puts 'Version 1.0.0'
+          puts Rygger::VERSION
           exit
         end
 
         on :v, :verbose, 'verbose mode'
-        on :i, :include, '<include pattern>, can be specified multiple times', :optional => false, :as => Array
+        # on :i, :include, '<include pattern>, can be specified multiple times', :optional => false, :as => Array
         on :x, :exclude, '<exclude pattern>, can be specified multiple times', :optional => false, :as => Array
 
 
@@ -117,6 +171,8 @@ module Rygger
 
         on :o, :or, 'logically OR the include patterns; default is to logically
                          AND them'
+        on :i, :ignore_case, 'ignore case when matching'
+        on :c, :colors,    'show colors, defaults to true'
 
         on :t, :trim_to, 'trim the beginning of the output path up to and including this string', :optional => false
 
@@ -155,11 +211,11 @@ module Rygger
       @trim_to              = opts[:trim_to]
       @basename_only        = opts[:basename]
       base_dir              = opts[:basedir] || "."
-
-      exclude_pattern       += default_excludes
+      ignore_case           = opts[:ignore_case]
+      @show_colors          = opts[:colors].nil? ? true : false
+      exclude_pattern      += default_excludes
       base_dir              = base_dir.gsub( /\\/, '/' )
-  # puts "local: #{local_variables.class}"
-      include_pattern += extra_matches
+      include_pattern      += extra_matches
 
       if opts.verbose?
         puts <<-EOS.gsub(/^ {4}/, "" )
@@ -170,9 +226,13 @@ module Rygger
         logical_or            = #{logical_or}
         basename_only         = #{@basename_only}
         base_dir              = #{base_dir}
+        ignore_case           = #{ignore_case}
+        show_colors           = #{@show_colors}
 
         EOS
       end
+
+      color_assigner.show_colors = @show_colors
 
       check_pattern_specified include_pattern
 

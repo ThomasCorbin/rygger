@@ -1,11 +1,6 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
 
-# require 'colorize'
-# if Config::CONFIG['host_os'] =~ /mswin|mingw/
-#   require 'win32/console/ansi'
-# end
-
 # $LOAD_PATH.unshift File.expand_path('../../lib', file )
 
 begin
@@ -17,6 +12,7 @@ end
 
 begin
   Rygger::Rfind.new.slop_main
-rescue
+rescue Interrupt => ex
   puts "** Interrupted **"
 end
+

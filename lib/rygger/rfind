@@ -1,0 +1,370 @@
+#!/usr/bin/env ruby
+
+require 'find'
+# require 'Time'
+require 'rubygems'
+require 'colorize'
+if Config::CONFIG['host_os'] =~ /mswin|mingw/
+  require 'win32/console/ansi'
+end
+
+
+Opt = Struct.new( :key, :value )
+
+
+
+
+class ColorAssigner
+
+  def initialize
+    @colors             = [ :green, :red, :cyan, :blue, :magenta ]
+    @pattern_color_hash = Hash.new{|hash,key| hash[key] = next_color( @colors ) }
+  end
+
+  def next_color colors
+    color  = @colors.shift
+    colors = @colors << color
+
+    # puts color
+    # puts colors
+    # puts "=" * 40
+
+    color
+  end
+
+  def color_for key
+    @pattern_color_hash[key]
+  end
+end
+
+
+class Rfind
+
+  def initialize
+    @color_assigner = ColorAssigner.new
+  end
+
+
+  def color_for key
+    @color_assigner.color_for key
+  end
+
+
+  def check_for_excludes( path, excludes )
+    excludes.each do |exclude|
+      return true if path =~ /#{exclude}/
+    end
+
+    false
+  end
+
+
+  def colorize_line( line, pat )
+    return line if is_jruby?
+
+    require 'colorize'
+
+    begin
+      if is_windows? && ! is_jruby?
+        require 'win32/console/ansi'
+      end
+    rescue
+      puts "couldn't load win32console"
+    end
+
+    pat_color = color_for pat
+    # puts "pat_color #{pat_color}"
+    line.gsub( /(#{pat})/i ) { |re| re.colorize pat_color }
+  end
+
+
+  def check_for_any_match( path, includes, excludes )
+
+    includes.each do |include|
+      if @ignore_case
+        match = path =~ /#{include}/i
+      else
+        match = path =~ /#{include}/
+      end
+
+      if match
+        output path, include
+      end
+    end
+  end
+
+
+  def check_for_match( path, regexp, includes, excludes )
+    return if check_for_excludes( path, excludes )
+
+    # check_for_any_match( path, includes, excludes ) if logical_or
+    # check_for_any_match( path, includes, excludes )
+
+    if eval regexp
+      includes.each do |pat|
+        path = colorize_line path, pat
+      end
+
+      output path
+    end
+  end
+
+
+  def find( base, includes, excludes, logical_or )
+
+    regexp                = prepare_regexp( "path", includes, excludes, logical_or, @ignore_case)
+    # puts regexp
+
+    Find.find(base) do |path|
+      if FileTest.directory? path
+        if excludes.include?( File.basename( path ) )
+          Find.prune       # Don't look any further into this directory.
+        else
+          next
+        end
+      elsif path =~ /\.class/
+        Find.prune       # Don't look any further into this directory.
+      elsif path =~ /\.metadata/
+        Find.prune       # Don't look any further into this directory.
+      else
+        check_for_match path, regexp, includes, excludes
+      end
+    end
+  end
+
+
+  def prepare_regexp(input, include_pattern, exclude_pattern, logical_or, ignore_case)
+    regexp = []
+
+    ignore = ""
+    ignore = "i" if ignore_case
+
+    if include_pattern && include_pattern.length > 0
+      include_pattern.each { |pat| regexp << "#{input} =~ /#{pat}/#{ignore}" }
+    end
+
+    ipattern = logical_or ? "(#{regexp.join(' or ')})" : "(#{regexp.join(' and ')})"
+
+    regexp = []
+
+    if exclude_pattern && exclude_pattern.length > 0
+      exclude_pattern.each { |pat| regexp << "#{input} !~ /#{pat}/#{ignore}" }
+    end
+
+    xpattern = "(#{regexp.join(' and ')})"
+
+    regexp = []
+    regexp << ipattern if ipattern != '()'
+    regexp << xpattern if xpattern != '()'
+
+    "(#{regexp.join(' and ')})"
+  end
+
+
+  def output( path )
+    output = path
+
+    if @basename_only
+      output = File.basename( path )
+    elsif @trim_to
+      output = output.gsub( /.*rbps/, "" )
+    end
+      # mtime = File.mtime(path).strftime("%m/%d/%Y %H:%M:%S")
+    # puts "#{output.colorize :green}"
+    # puts colorize_line output, pat
+    puts output
+      # p path
+      # p File.mtime(path)
+  end
+
+
+  def slop_main
+    require 'slop'
+
+    opts = Slop.new do
+      my_name = File.basename($0)
+
+      banner <<-EOS.gsub(/^ {4}/, "")
+
+      #{my_name} is a utility for quickly finding files
+      whose name matches given regular expressions
+
+      Usage:
+
+        #{my_name} OPTIONS
+
+      where OPTIONS can be
+      EOS
+
+      on :V, :version, 'print out version number' do
+        puts 'Version 0.1.0'
+        exit
+      end
+
+      on :v, :verbose, 'verbose mode'
+      on :i, :ignore_case, '<include pattern>, can be specified multiple times'
+      on :x, :exclude, '<exclude pattern>, can be specified multiple times', :optional => false, :as => Array
+
+
+      on :b, :basename, 'output only the basename, overrides trim_to'
+      on :B, :basedir,  '<search base directory>, can be specified only once;
+                       if given multiple times, the last one survives;
+                       defaults to current directory', :optional => false
+
+      on :r, :recurse, '<yes|no>, can be specified only once; if given multiple
+                        times, the last one survives; defaults to yes'
+
+      on :o, :or, 'logically OR the include patterns; default is to logically
+                       AND them'
+
+      on :t, :trim_to, 'trim the beginning of the output path up to and including this string', :optional => false
+
+      on :h, :help, 'Print this help message', :tail => true do
+        puts help
+        exit
+      end
+    end
+
+    extra_matches = []
+    opts.parse do |arg|
+      extra_matches << arg
+    end
+
+    log_options opts
+
+    default_excludes    = [ "CVS",
+                            ".svn",
+                            # "classes",
+                            # "images",
+                            # "lib",
+                            # "tlds",
+                            ".metadata",
+                            # "bin",
+                            # "rbps-build-and-deploy",
+                            # "target",
+                             ]
+
+
+    include_pattern       = []
+    exclude_pattern       = opts[:exclude] || []
+    # base                  = opts[:base]    || base
+    recursive             = opts[:recurse].nil? ? true : opts[:recurse]
+    logical_or            = opts[:or].nil? ? false : true
+    @trim_to              = opts[:trim_to]
+    @basename_only        = opts[:basename]
+    base_dir              = opts[:basedir] || "."
+    @ignore_case          = opts.ignore_case?
+
+    base_dir = base_dir.gsub( /\\/, '/' )
+    exclude_pattern       += default_excludes
+# puts "local: #{local_variables.class}"
+    include_pattern += extra_matches
+
+    if opts.verbose?
+      puts <<-EOS.gsub(/^ {4}/, "" )
+      include_pattern       = #{include_pattern.inspect}
+      exclude_pattern       = #{exclude_pattern.inspect}
+      trim_to               = #{@trim_to}
+      recursive             = #{recursive}
+      logical_or            = #{logical_or}
+      basename_only         = #{@basename_only}
+      base_dir              = #{base_dir}
+      @ignore_case          = #{@ignore_case}
+
+      EOS
+    end
+
+    check_pattern_specified include_pattern
+
+    find( base_dir, include_pattern, exclude_pattern, logical_or )
+  end
+
+
+  def check_pattern_specified( include_pattern )
+
+    # if include_pattern.length == 0 and exclude_pattern.length == 0
+    if include_pattern.length == 0
+      puts <<-EOS.gsub(/^\s+/, "").strip
+      --- Hmm ... looks like you don\'t want to search for any pattern.  Quitting!
+      --- Try -h if you are looking for some help.
+
+      EOS
+      exit
+    end
+  end
+
+
+  def log_options( opts )
+    return unless opts.verbose?
+
+    require 'hirb'
+    extend Hirb::Console
+    require 'hirb/import_object'
+
+    contents = opts.to_hash.inject( [] ){ |l,(k,v)| l << Opt.new( k, v.inspect) }
+    contents << Opt.new( 'host_os',         Config::CONFIG[ 'host_os']  )
+    contents << Opt.new( 'RUBY_PLATFORM',   RUBY_PLATFORM               )
+    contents << Opt.new( 'is_jruby?',       is_jruby?                   )
+    contents << Opt.new( 'is_windows?',     is_windows?                 )
+
+    table contents, :fields => [:key, :value]
+    puts
+  end
+
+  def is_jruby?
+    # RUBY_PLATFORM == 'java'
+    ((defined? RUBY_ENGINE) && RUBY_ENGINE == 'jruby') ? true : false
+  end
+
+  def is_windows?
+    # (Config::CONFIG['host_os'] =~ /mswin|mingw/) ? true : false
+    (Config::CONFIG['host_os'] =~ /windows|cygwin|bccwin|cygwin|djgpp|mingw|mswin|wince/i) ? true : false
+  end
+end
+
+
+if $0 == __FILE__
+  Rfind.new.slop_main
+end
+
+
+# def diff( first, sedond )
+#     seconds = first - second
+
+# end
+
+# dirs        = ["."]
+
+# for dir in dirs
+#   Find.find(dir) do |path|
+#     if FileTest.directory?(path)
+#       if excludes.include?(File.basename(path))
+#         Find.prune       # Don't look any further into this directory.
+#       else
+#         next
+#       end
+#     elsif path =~ /\.class/
+#       Find.prune       # Don't look any further into this directory.
+#     elsif path =~ /\.metadata/
+#       Find.prune       # Don't look any further into this directory.
+#     else
+#         if (File.mtime(path) - Time.parse( '07/04/2011' )) > 0
+#             output = path.gsub( "./rbps-core-r1/src/main/java/gov/va/vba/rbps/", "" )
+#             output = output.gsub( "./rbps-core-r1/src/test/java/gov/va/vba/rbps/", "" )
+#             output = output.gsub( "./rbps-common-r1/src/main/java/gov/va/vba/rbps/", "" )
+#             output = output.gsub( "./rbps-lettergen-r1/src/main/java/gov/va/vba/rbps/", "" )
+#             output = output.gsub( "./rbps-lettergen-r1/src/main/resources/gov/va/vba/rbps/", "" )
+#             output = output.gsub( "./rbps-lettergen-r1/src/test/java/gov/va/vba/rbps/", "" )
+#             output = output.gsub( "./rbps-web-r1/src/main/resources/", "" )
+
+#             # p output.colorize( :red )
+#             mtime = File.mtime(path).strftime("%m/%d/%Y %H:%M:%S")
+#             puts "#{mtime.colorize :blue}    #{output.colorize :green}"
+#             # p path
+#             # p File.mtime(path)
+#         end
+#     end
+#   end
+# end
+
+

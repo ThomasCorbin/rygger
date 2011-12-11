@@ -1,4 +1,14 @@
 module Rygger
+
+
+  #
+  #    There are certain utilities that I always
+  #    seem to want:
+  #
+  #      * try_require
+  #      * is_java?
+  #      * is_windows?
+  #
   class Utils
 
     Opt = Struct.new( :key, :value )

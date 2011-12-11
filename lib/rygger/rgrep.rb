@@ -1,16 +1,14 @@
 require 'iconv'
 
+
 module Rygger
   class Rgrep
 
     VC_DIRS = %w(blib CVS _darcs .git .pc RCS SCCS .svn pkg)
 
-    def initialize
-      @color_assigner = ColorAssigner.new
-    end
 
-    def color_for key
-      @color_assigner.color_for key
+    def color_assigner
+      @color_assigner ||= ColorAssigner.new
     end
 
 
@@ -56,25 +54,6 @@ module Rygger
     end
 
 
-    def colorize_line( line, pat )
-      return line if utils.is_jruby?
-      return line if ! @show_colors
-
-      require 'colorize'
-
-      begin
-        if utils.is_windows? && ! utils.is_jruby?
-          require 'win32/console/ansi'
-        end
-      rescue
-        puts "couldn't load win32console"
-      end
-
-      pat_color = color_for pat
-      line.gsub( /(#{pat})/i ) { |re| re.colorize pat_color }
-    end
-
-
     def generalized_search( include_pattern,
                             exclude_pattern,
                             base                    = '.',
@@ -117,7 +96,7 @@ module Rygger
             # results << sprintf("%5d : %s", line_number, line)
 
             include_pattern.each do |pat|
-              line = colorize_line line, pat
+              line = color_assigner.colorize_line line, pat
             end
 
             if @show_file_names
@@ -213,7 +192,7 @@ module Rygger
         EOS
 
         on :V, :version, 'print out version number' do
-          puts 'Version 0.1.0'
+          puts Rygger::VERSION
           exit
         end
 
@@ -291,9 +270,11 @@ module Rygger
         EOS
       end
 
-      if @show_colors
-        utils.try_require 'lolize/auto', ! utils.is_windows?
-      end
+      color_assigner.show_colors = @show_colors
+
+      # if @show_colors
+      #   utils.try_require 'lolize/auto', ! utils.is_windows?
+      # end
 
       check_pattern_specified include_pattern
 

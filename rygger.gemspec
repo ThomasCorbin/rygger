@@ -20,11 +20,14 @@ Gem::Specification.new do |s|
 
   # specify any dependencies here; for example:
   s.add_development_dependency  "rspec"
+  s.add_development_dependency  "rocco"
+
   s.add_runtime_dependency      'colorize'
   s.add_runtime_dependency      'hirb'
   s.add_runtime_dependency      'lolize'
   s.add_runtime_dependency      'ptools'
   s.add_runtime_dependency      'rake'
   s.add_runtime_dependency      'slop'
+  # s.add_runtime_dependency      'iconv'
   s.add_runtime_dependency      'file-tail'
 end
