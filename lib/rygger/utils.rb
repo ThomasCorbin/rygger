@@ -11,9 +11,11 @@ module Rygger
   #
   class Utils
 
+    #    Used to turn the options into a hash, so I can use
+    #    hirb to put out the list of options.
     Opt = Struct.new( :key, :value )
 
-    BINARY_TYPES = %w(.pdf )
+    BINARY_TYPES = %w(.pdf .class .o)
 
 
     #

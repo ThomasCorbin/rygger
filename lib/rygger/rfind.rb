@@ -63,7 +63,7 @@ module Rygger
 
     def find( base, includes, excludes, logical_or )
 
-      regexp                = prepare_regexp( "path", includes, excludes, logical_or, @ignore_case)
+      regexp                = Search.new.prepare_regexp( "path", includes, excludes, logical_or, @ignore_case)
       # puts regexp
 
       Find.find(base) do |path|
@@ -82,35 +82,6 @@ module Rygger
         end
       end
     end
-
-
-    def prepare_regexp(input, include_pattern, exclude_pattern, logical_or, ignore_case)
-      regexp = []
-
-      ignore = ""
-      ignore = "i" if ignore_case
-
-      if include_pattern && include_pattern.length > 0
-        include_pattern.each { |pat| regexp << "#{input} =~ /#{pat}/#{ignore}" }
-      end
-
-      ipattern = logical_or ? "(#{regexp.join(' or ')})" : "(#{regexp.join(' and ')})"
-
-      regexp = []
-
-      if exclude_pattern && exclude_pattern.length > 0
-        exclude_pattern.each { |pat| regexp << "#{input} !~ /#{pat}/#{ignore}" }
-      end
-
-      xpattern = "(#{regexp.join(' and ')})"
-
-      regexp = []
-      regexp << ipattern if ipattern != '()'
-      regexp << xpattern if xpattern != '()'
-
-      "(#{regexp.join(' and ')})"
-    end
-
 
 
     def output( path )
@@ -198,7 +169,6 @@ module Rygger
                               # "tlds",
                               ".metadata",
                               # "bin",
-                              # "rbps-build-and-deploy",
                               # "target",
                                ]
 
@@ -211,7 +181,7 @@ module Rygger
       @trim_to              = opts[:trim_to]
       @basename_only        = opts[:basename]
       base_dir              = opts[:basedir] || "."
-      ignore_case           = opts[:ignore_case]
+      @ignore_case          = opts[:ignore_case]
       @show_colors          = opts[:colors].nil? ? true : false
       exclude_pattern      += default_excludes
       base_dir              = base_dir.gsub( /\\/, '/' )
@@ -226,7 +196,7 @@ module Rygger
         logical_or            = #{logical_or}
         basename_only         = #{@basename_only}
         base_dir              = #{base_dir}
-        ignore_case           = #{ignore_case}
+        ignore_case           = #{@ignore_case}
         show_colors           = #{@show_colors}
 
         EOS

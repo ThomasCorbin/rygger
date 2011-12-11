@@ -1,8 +1,9 @@
 require_relative 'rygger/version'
 require_relative 'rygger/color_assigner'
+require_relative 'rygger/search'
+require_relative 'rygger/utils'
 require_relative 'rygger/rfind'
 require_relative 'rygger/rgrep'
-require_relative 'rygger/utils'
 
 
 if RUBY_VERSION =~ /1.9/
@@ -11,6 +12,6 @@ if RUBY_VERSION =~ /1.9/
 end
 
 
-module Rygger
-  # Your code goes here...
-end
+# module Rygger
+#   # Your code goes here...
+# end

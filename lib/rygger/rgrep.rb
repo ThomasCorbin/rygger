@@ -64,7 +64,7 @@ module Rygger
                             ignore_case             = false )
 
       file_names            = get_filenames( base, file_pattern, exclude_file_pattern, recurse )
-      regexp                = prepare_regexp(include_pattern, exclude_pattern, logical_or, ignore_case)
+      regexp                = Search.new.prepare_regexp(include_pattern, exclude_pattern, logical_or, ignore_case)
       results               = []
       num_matching_lines    = 0
       num_matching_files    = 0
@@ -138,36 +138,6 @@ module Rygger
       end
 
       num_matching_files
-    end
-
-
-
-
-    def prepare_regexp(include_pattern, exclude_pattern, logical_or, ignore_case)
-      regexp = []
-
-      ignore = ""
-      ignore = "i" if ignore_case
-
-      if include_pattern && include_pattern.length > 0
-        include_pattern.each { |pat| regexp << "line =~ /#{pat}/#{ignore}" }
-      end
-
-      ipattern = logical_or ? "(#{regexp.join(' or ')})" : "(#{regexp.join(' and ')})"
-
-      regexp = []
-
-      if exclude_pattern && exclude_pattern.length > 0
-        exclude_pattern.each { |pat| regexp << "line !~ /#{pat}/#{ignore}" }
-      end
-
-      xpattern = "(#{regexp.join(' and ')})"
-
-      regexp = []
-      regexp << ipattern if ipattern != '()'
-      regexp << xpattern if xpattern != '()'
-
-      "(#{regexp.join(' and ')})"
     end
 
 
