@@ -6,21 +6,24 @@ machine, but I could install ruby.  Go figure, but it let me practice some
 ruby and write some of these utilities that I'm used to having around.
 And they've been a lifesaver.
 
+I'm also using this to stretch my ruby muscles and to write my first gem.
+
 Rygger is in a fairly preliminary state, but I've found it immensely useful
 as it is.   I can't say that anyone else would find it useful, but you're
 welcome to do what you want with it.
 
-A better choice would probably be ack and Daniel Lucraft's rak.
+A better choice for others would probably be [ack](http://betterthangrep.com/)
+and Daniel Lucraft's [rak](https://github.com/danlucraft/rak).
 
 The commands I have
 ------------
 
-* rgrep
-* rfind
-* rtee
-* rcat
-* rtail
-* prpath
+* rgrep       - sorta like grep, but recursive.  Not like ack.
+* rfind       - sort of like find
+* rtee        - like tee
+* rcat        - like cat
+* rtail       - like tail
+* prpath      - prints out a PATH or CLASSPATH, which each path item on it's own row.
 
 Installation
 ----------
@@ -74,6 +77,7 @@ Installing locally
 ------------------
 
 rake -T
+
 rake install
 
 
